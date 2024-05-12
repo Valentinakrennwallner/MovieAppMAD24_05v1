@@ -1,25 +1,71 @@
 package com.example.movieappmad24.models
 
+import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 
 @Entity
 data class Movie(
-    @PrimaryKey(autoGenerate = true)
-    val dbId: Long = 0,
-    val id: String,
+    @PrimaryKey val id: String,
     val title: String,
     val year: String,
     val genre: String,
     val director: String,
     val actors: String,
     val plot: String,
-    @Ignore
-    val images: List<String>,
+    @Ignore val images: List<String> = emptyList(),
     val trailer: String,
     val rating: String,
     var isFavorite: Boolean = false
+) {
+    constructor(
+        id: String,
+        title: String,
+        year: String,
+        genre: String,
+        director: String,
+        actors: String,
+        plot: String,
+        trailer: String,
+        rating: String,
+        isFavorite: Boolean
+    ) : this(
+        id = id,
+        title = title,
+        year = year,
+        genre = genre,
+        director = director,
+        actors = actors,
+        plot = plot,
+        images = emptyList(),
+        trailer = trailer,
+        rating = rating,
+        isFavorite = isFavorite
+    )
+}
+@Entity(
+    tableName = "MovieImage",
+    foreignKeys = [ForeignKey(
+        entity = Movie::class,
+        parentColumns = ["id"],
+        childColumns = ["movieId"],
+        onDelete = ForeignKey.CASCADE
+    )]
+)
+data class MovieImage(
+    @PrimaryKey val movieId: Long,
+    val url: String
+)
+data class MovieWithImages(
+    @Embedded val movie: Movie,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "movieId"
+    )
+    val images: List<MovieImage>
 )
 
 fun getMovies(): List<Movie> {

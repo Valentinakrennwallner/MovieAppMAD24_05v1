@@ -51,25 +51,22 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.example.movieappmad24.models.Movie
-import com.example.movieappmad24.models.getMovies
+import com.example.movieappmad24.models.MovieWithImages
 import com.example.movieappmad24.navigation.Screen
-import com.example.movieappmad24.viewmodels.MoviesViewModel
 
 
 @Composable
 fun MovieList(
-    modifier: Modifier,
-    movies: List<Movie> = getMovies(),
+    modifier: Modifier = Modifier,
+    movies: List<MovieWithImages>,
     navController: NavController,
-    viewModel: MoviesViewModel
-){
+    toggleFavoriteMovie: (MovieWithImages) -> Unit
+) {
     LazyColumn(modifier = modifier) {
-        items(movies) { movie ->
+        items(movies) { movieWithImages ->
             MovieRow(
-                movie = movie,
-                onFavoriteClick = {movieId ->
-                    viewModel.toggleFavoriteMovie(movieId)
-                },
+                movieWithImages = movieWithImages, // Hier wird das gesamte Objekt übergeben
+                onFavoriteClick = { toggleFavoriteMovie(movieWithImages) },
                 onItemClick = { movieId ->
                     navController.navigate(route = Screen.DetailScreen.withId(movieId))
                 }
@@ -77,33 +74,43 @@ fun MovieList(
         }
     }
 }
-
 @Composable
 fun MovieRow(
     modifier: Modifier = Modifier,
-    movie: Movie,
+    movieWithImages: MovieWithImages,
     onFavoriteClick: (String) -> Unit = {},
     onItemClick: (String) -> Unit = {}
-){
-    Card(modifier = modifier
-        .fillMaxWidth()
-        .padding(5.dp)
-        .clickable {
-            onItemClick(movie.id)
-        },
+) {
+    val movie = movieWithImages.movie
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(5.dp)
+            .clickable {
+                onItemClick(movie.id)
+            },
         shape = ShapeDefaults.Large,
         elevation = CardDefaults.cardElevation(10.dp)
     ) {
         Column {
-
-            MovieCardHeader(
-                imageUrl = movie.images[0],
-                isFavorite = movie.isFavorite,
-                onFavoriteClick = { onFavoriteClick(movie.id) }
-            )
+            // Überprüfen, ob die Bildliste nicht leer ist, bevor auf das erste Element zugegriffen wird
+            if (movieWithImages.images.isNotEmpty()) {
+                MovieCardHeader(
+                    imageUrl = movieWithImages.images[0].url,
+                    isFavorite = movie.isFavorite,
+                    onFavoriteClick = { onFavoriteClick(movie.id) }
+                )
+            } else {
+                // Optional: Behandle den Fall, dass keine Bilder vorhanden sind
+                // Zum Beispiel kannst du einen Platzhalter oder gar nichts anzeigen
+                MovieCardHeader(
+                    imageUrl = "default_image_url", // Beispiel: Platzhalter-Bild-URL
+                    isFavorite = movie.isFavorite,
+                    onFavoriteClick = { onFavoriteClick(movie.id) }
+                )
+            }
 
             MovieDetails(modifier = modifier.padding(12.dp), movie = movie)
-
         }
     }
 }
@@ -223,7 +230,7 @@ fun MovieDetails(modifier: Modifier, movie: Movie) {
 
 
 @Composable
-fun HorizontalScrollableImageView(movie: Movie) {
+fun HorizontalScrollableImageView(movie: MovieWithImages) {
     LazyRow {
         items(movie.images) { image ->
             Card(
